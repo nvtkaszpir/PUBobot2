@@ -1,0 +1,18 @@
+apiVersion: v2
+name: pubobot2
+description: A Helm chart for Kubernetes to deploy PUBobot2
+type: application
+version: 0.1.0
+appVersion: "0.8.0"
+icon: https://cdn.discordapp.com/icons/176258707057934336/74e8a6d0746e48f3ad0b79b81ee426b5.png?size=256
+home: https://github.com/nvtkaszpir/PUBobot2
+maintainers:
+- email: kaszpir@gmail.com
+  name: Michał Sochoń
+sources:
+  - https://github.com/nvtkaszpir/PUBobot2
+# dependencies:
+# - name: mysql
+#   repository: https://charts.bitnami.com/bitnami
+#   version: "8.8.7"
+#   condition: mysql.enabled

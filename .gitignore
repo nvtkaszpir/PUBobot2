@@ -3,3 +3,6 @@ config.cfg
 locales/compiled/
 logs/*
 hack/mysql/logs/
+
+**/*-private.yml
+**/*-private.yaml

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "pubobot2.fullname" . }}
+  labels:
+    {{- include "pubobot2.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "pubobot2.fullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "pubobot2.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- end }}
+      labels:
+        {{- include "pubobot2.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - name: config
+            mountPath: /home/bot/config.cfg
+            subPath: config.cfg
+          - name: logs
+            mountPath: /home/bot/logs/
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: config
+        secret:
+          secretName: {{ include "pubobot2.fullname" . }}-config
+      {{- if not .Values.persistence.enabled }}
+      - name: "logs"
+        emptyDir: {}
+      {{- else }}
+      {{- if .Values.persistence.existingClaim }}
+      - name: "logs"
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim }}
+      {{- end }}
+      {{- end }}
+      {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+      volumeClaimTemplates:
+        - metadata:
+            name: pubobot2-logs
+          spec:
+            accessModes:
+            {{- range .Values.persistence.accessModes }}
+              - {{ . | quote }}
+            {{- end }}
+            resources:
+              requests:
+                storage: {{ .Values.master.persistence.size | quote }}
+            {{ include ".Values.persistence.storageClass" . }}
+      {{- end }}
